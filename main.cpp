@@ -110,10 +110,13 @@ bool testBigram(const string& word, const string& bigram) {
 }
 
 bool testWord(const string& word, const vector<bool>& bloom) {
-    if (!testBloom(word, bloom))
+    size_t n = word.size();
+    string wordForBloom = word;
+    if (n > 2 && word[n - 1] == 's' && word[n-2] == '\'')
+        wordForBloom = word.substr(0, n - 2);
+    if (!testBloom(wordForBloom, bloom))
         return false;
 
-    size_t n = word.size();
     size_t containAp = countAp(word);
     size_t strangeCount = 0;
     for (size_t k = 0; k < bigramUsed; ++k) {
@@ -138,30 +141,8 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     if (testTrippleVowel(word) && n < 8)
         ++strangeCount;
 
-    if (n > 13) {
-        bool ok = false;
-        for (size_t i = 4; i + 4 < n; ++i) {
-            if (testBloom(word.substr(0, i), bloom) && testBloom(word.substr(i, n), bloom))
-                ok = true;
-        }
-        if (ok == false)
-            return false;
-    }
-    if (n > 16) {
-        // too many correct words is lost, but trash filtered better (at this moment).
-        return false;
-    }
     if (strangeCount > 1)
         return false;
-
-    if (word[n - 1] == 's' && word[n - 2] == '\'') {
-        string wordBefore = word.substr(0, n - 2);
-        if (!testBloom(wordBefore, bloom))
-            return false;
-        if (containAp == 1)
-            return true;
-        return false;
-    }
 
     if (n > 15) {
         // too many correct words is lost, but trash filtered better (at this moment).
@@ -183,16 +164,16 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     if (strangeCount > 0)
         return false;
 
-    if (word[0] >= 'z')
-        ++strangeCount;
+//    if (word[0] >= 'z')
+//        ++strangeCount;
 
     if (countPair(word) > 3)
         ++strangeCount;
     if (strangeCount > 1)
         return false;
 
-    if (containAp)
-        return false;
+//    if (containAp)
+//        return false;
     return true;
 }
 
@@ -223,7 +204,7 @@ void addBigram(const string& word, map<string, size_t>& biMap) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cerr << "usage: " << argv[0] << "DIR" << endl;
+        cerr << "usage: " << argv[0] << " DIR" << endl;
         return 1;
     }
 
@@ -234,7 +215,7 @@ int main(int argc, char *argv[]) {
 
     string lex;
 
-    string dictionaryFilename = "words-uniq.txt";
+    string dictionaryFilename = "words-2.txt";
     ifstream dictionaryFile(dictionaryFilename.c_str());
     set<string> dictionary;
 
@@ -262,7 +243,7 @@ int main(int argc, char *argv[]) {
     while (trash >> lex) {
         if (testWord(lex, bloom)) {
             ++countTrashFail;
-            if (rand() < 200000)
+            if (rand() < 2000000)
                 cerr << lex << endl;
         } else {
             ++countTrashOk;

@@ -17,6 +17,7 @@ const size_t bloomK = 1;
 
 const string bigramFrequency[] = { "jq", "jx", "jz", "qj", "qx", "qz", "vq", "xj", "zx", "gx", "hx", "vj", "wx", "qg", "qh", "qp", "qv", "qy", "wq", "kx", "qk", "vb", "zj", "fq", "px", "qc", "qf", "vw", "vx", "xz", "cx", "fx", "jv", "kz", "qn", "xk", "cj", "gq", "jb", "kq", "qb", "bx", "jg", "pq", "qd", "qm", "qw", "sx", "fv", "fz", "jf", "jw", "mx", "qq", "tx", "dx", "ql", "qt", "vf", "pz", "vz", "jm", "qo", "wj", "zq", "bq", "jt", "qr", "yq", "jj", "qe", "zf", "jl", "mq", "vh", "jh", "vp", "jp", "xq", "bz", "xg", "fj", "xx", "jk", "jy", "xr", "vg", "tq", "dq", "jc", "qs", "vm", "lx", "xn", "yj", "zg", "jd", "xv", "rx", "wv", "cv", "hq", "jr", "xd", "mz", "yy", "gz", "js", "vc", "zp", "gv", "hj", "jn", "zv", "hz", "lq", "gj", "mj", "pv", "wz", "vk", "vt", "pj", "vd", "cw", "zr", "zd", "zc", "fk", "fg", "zt", "qi", "xw", "zn", "zw", "fw", "lj", "zs", "cf", "fp", "kj", "vn", "zk", "fh", "xm", "bk", "kg", "xf", "fd", "xb", "cb", "mk", "fb", "zm", "wg", "cg", "qa", "zb", "vv", "gk", "dk", "cp", "fc", "uw", "xl", "mg", "uq", "gc", "sj", "fm", "bg", "pg", "sz", "cz", "pk", "ww", "vl", "zh", "fn", "uu", "tj", "dz", "hv", "gp", "lz", "kc", "kd", "kv", "wc", "mv", "xs", "bw", "hg", "nx", "mh", "tk", "pd", "cm", "cd", "uj", "hh", "mw", "vs", "wp", "bv", "hk", "bf", "mt", "gf", "yz", "yk", "md", "wf", "wu", "vr", "kp", "tv", "hd", "bp", "hc", "rq", "xh", "bn", "vy", "uh", "gd", "pc", "iy", "pw", "wm", "rj", "iw", "yv", "pf", "hp", "wk", "oj", "cq", "ij", "kk", "mr", "wt", "yx", "yh", "pb", "td", "kf", "rz", "uy", "dp", "bh", "yf", "zu", "pm", "bj", "gb", "bm", "hf", "lr", "dj", "wy", "mf", "dc", "xu", "dt", "zl", "wb", "wd", "gw", "cn", "kb", "km", "tg", "sg", "oq", "kt", "sr", "lh", "yu", "yw", "kw", "gt", "bc", "hb", "df", "sd", "uz", "ej", "lw", "fs", "nq", "aq", "ml", "bd", "bt", "dv", "tp", "vu", "zy", "ih", "aj", "ux", "mc", "pn", "db", "uv", "xc", "aa", "hw", "ao", "iq", "nj", "sf", "ji", "tb", "dh", "dw", "yb", "kr", "ez", "nz", "ii", "wl", "xy", "tf", "tz", "fy", "zz", "xo", "dm", "sv", "wr", "kh", "by", "ku", "ky", "gm", "uk", "xp", "ws", "ix", "eq", "kn", "tn", "lg", "oz", "yg", "nw", "uo", "tm", "ek", "mn", "sq", "rw", "xa", "sb", "lk", "xt", "uf", "lf", "lb", "hm", "xe", "dg", "oh", "cs", "hs", "tw", "lv", "hn", "ln", "oy", "ft", "nm", "nh", "ax", "je", "wn", "jo", "yi", "lc", "kl", "lp", "nb", "yd", "ju", "nl", "wh", "rf", "bs", "dn", "eh", "sw", "nr", "py", "lm", "nv", "ko", "az", "zi", "yo", "bb", "np", "dy", "rv", "hl", "ny", "gy", "ox", "za", "zo", "tc", "ye", "ja", "xi", "rh", "dd", "yr", "gg", "of", "ok", "ks", "yt", "aw", "rk", "af", "yc", "ym", "ah", "cc", "sk", "nk", "vo", "ug", "ik", "ht", "gn", "ya", "dl", "my", "iu", "ew", "yn", "sy", "ey", "nf", "sn", "oe", "ze", "gs", "rl", "fr", "iz", "tl", "rb", "ld", "gh", "ff", "ms", "nu", "rp", "sl", "eb", "ds", "cy", "ay", "yp", "hu", "fu", "ef", "mm", "pp", "du", "ak", "ud", "ka", "ls", "ys", "ev", "ue", "oa", "lt", "pu", "av", "wo", "yl", "fa", "ps", "fl", "hr", "rg", "wi", "we", "gu", "ua", "ui", "pt", "mu", "eg", "mb", "ib", "eu", "ex", "uc", "up", "rn", "ub", "ob", "eo", "gl", "fe", "nn", "ei", "ow", "cl", "dr", "go", "fo", "if", "oi", "va", "bu", "rc", "ki", "qu", "wa", "ov", "rr", "rm", "au", "rd", "mp", "ru", "br", "lu", "pl", "fi", "ip", "ty", "tt", "cu", "ig", "iv", "tu", "ry", "hy", "ai", "ts", "ae", "gr", "ck", "bo", "ir", "od", "ep", "ee", "cr", "oo", "sp", "sm", "im", "gi", "ke", "ga", "ag", "vi", "ut", "um", "do", "so", "rt", "ct", "bi", "su", "sc", "be", "ba", "og", "pi", "ad", "bl", "ap", "da", "oc", "ci", "sa", "em", "ab", "sh", "ec", "ge", "po", "mo", "pa", "rs", "nc", "am", "pr", "ot", "ul", "op", "id", "ce", "ly", "ur", "nd", "ea", "os", "ho", "hi", "ns", "ve", "ph", "ie", "om", "ha", "pe", "th", "ou", "mi", "ac", "si", "no", "et", "di", "ol", "as", "il", "us", "lo", "na", "me", "tr", "he", "ll", "io", "ia", "ta", "el", "ch", "ma", "ca", "to", "de", "un", "ni", "ss", "co", "it", "ed", "se", "la", "nt", "ng", "or", "ro", "ic", "li", "ar", "st", "ne", "ra", "ri", "le", "al", "re", "at", "en", "is", "te", "an", "ti", "on", "es", "in", "er"};
 const size_t bigramCount = sizeof(bigramFrequency) / sizeof(bigramFrequency[0]);
+const size_t strongBigramUsed = 40;
 const size_t bigramUsed = 80;
 
 uint64_t hashString(const string& word, size_t index) {
@@ -46,7 +47,7 @@ bool testBloom(const string& word, const vector<bool>& bloom) {
 }
 
 bool testVowel(char i) {
-    if (i == 'a' || i == 'e' || i == 'i' || i == 'o' || i == 'u')
+    if (i == 'a' || i == 'e' || i == 'i' || i == 'o' || i == 'u' || i == 'y')
         return true;
     return false;
 }
@@ -58,6 +59,28 @@ size_t countConsolant(const string& word) {
             ++count;
     }
     return count;
+}
+size_t countConsolantSeq(const string& word) {
+    size_t bestCount = 0;
+    size_t n = word.size();
+    for (size_t i = 0; i < n; ++i) {
+        size_t j = i;
+        while (j < n && testVowel(word[j]))
+            ++j;
+        bestCount = max(bestCount, j - i);
+    }
+    return bestCount;
+}
+size_t countVowelSeq(const string& word) {
+    size_t bestCount = 0;
+    size_t n = word.size();
+    for (size_t i = 0; i < n; ++i) {
+        size_t j = i;
+        while (j < n && !testVowel(word[j]))
+            ++j;
+        bestCount = max(bestCount, j - i);
+    }
+    return bestCount;
 }
 
 size_t countAp(const string& word) {
@@ -135,9 +158,16 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         : n;
     size_t containAp = countAp(word);
     size_t strangeCount = 0;
-    for (size_t k = 0; k < bigramUsed; ++k) {
-        if (!testBigram(word, bigramFrequency[k]))
-            return false;
+    if (m < 3) {
+        for (size_t k = 0; k < strongBigramUsed; ++k) {
+            if (!testBigram(word, bigramFrequency[k]))
+                return false;
+        }
+    } else {
+        for (size_t k = 0; k < bigramUsed; ++k) {
+            if (!testBigram(word, bigramFrequency[k]))
+                return false;
+        }
     }
     static map<string, size_t> bigramMap = initBigramMap();
     size_t bigramPoints = 0;
@@ -145,22 +175,51 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         size_t bigramPoint = bigramMap[word.substr(i-1, 2)];
         bigramPoints += bigramPoint * bigramPoint;
     }
-    if (m > 2 && sqrt(bigramPoints) < .24 * bigramCount * (m - 1)) {
+    double bigramPointCoeff[] = {
+        0.0,
+        0.0,
+        0.0,
+        0.24,
+        0.24,
+        0.24,
+        0.24,
+        0.24,
+        0.24,
+        0.24,
+        0.23, // m == 10
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23,
+        0.23, // m == 20
+        0.23,
+        0.23,
+    };
+    if (sqrt(bigramPoints) < bigramPointCoeff[m] * bigramCount * (m - 1)) {
         return false;
     }
-
-    if (containAp > 1)
-        ++strangeCount;
+    /*
+    if (m > 2 && m < 10 && sqrt(bigramPoints) < .24 * bigramCount * (m - 1)) {
+        return false;
+    }
+    if (m > 9 && sqrt(bigramPoints) < .23 * bigramCount * (m - 1)) {
+        return false;
+    }
+*/
+    if (containAp && !isSword)
+        return false;
     if (n < 3 && containAp)
         return false;
     if (m < 3)
         return true;
 
     if (testTripple(word) && n != 3)
-        ++strangeCount;
-
-    if (testTrippleVowel(word) && n < 8)
-        ++strangeCount;
+        return false;
 
     if (strangeCount > 1)
         return false;
@@ -170,14 +229,20 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         return false;
     }
 
+    size_t consolantSeq = countConsolantSeq(word);
+    size_t vowelSeq = countVowelSeq(word);
     size_t consolantCount = countConsolant(word);
     size_t vowelCount = n - consolantCount;
+    if (consolantSeq > 6)
+        return false;
+    if (vowelSeq > 6)
+        return false;
     if (vowelCount == 1 && endedByEd(word))
         ++strangeCount;
-    if (vowelCount == 0)
-        ++strangeCount;
-    if (consolantCount == 0)
-        ++strangeCount;
+    if (m > 3 && vowelCount == 0)
+        return false;
+    if (m > 3 && consolantCount == 0)
+        return false;
     if (n > 7 && vowelCount < n / 5)
         ++strangeCount;
     if (n > 7 && consolantCount < n / 4)
@@ -264,7 +329,7 @@ int main(int argc, char *argv[]) {
     while (trash >> lex) {
         if (testWord(lex, bloom)) {
             ++countTrashFail;
-            if (rand() < 200000)
+            if (rand() < 800000)
                 cerr << lex << endl;
         } else {
             ++countTrashOk;
@@ -276,6 +341,8 @@ int main(int argc, char *argv[]) {
             ++countWordsOk;
         } else {
             ++countWordsFail;
+            if (rand() < 2000000)
+                cerr << lex << endl;
         }
     }
 

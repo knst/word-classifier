@@ -138,7 +138,16 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     if (testTrippleVowel(word) && n < 8)
         ++strangeCount;
 
-    if (n > 15) {
+    if (n > 13) {
+        bool ok = false;
+        for (size_t i = 4; i + 4 < n; ++i) {
+            if (testBloom(word.substr(0, i), bloom) && testBloom(word.substr(i, n), bloom))
+                ok = true;
+        }
+        if (ok == false)
+            return false;
+    }
+    if (n > 16) {
         // too many correct words is lost, but trash filtered better (at this moment).
         return false;
     }
@@ -151,6 +160,11 @@ bool testWord(const string& word, const vector<bool>& bloom) {
             return false;
         if (containAp == 1)
             return true;
+        return false;
+    }
+
+    if (n > 15) {
+        // too many correct words is lost, but trash filtered better (at this moment).
         return false;
     }
 

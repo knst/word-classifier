@@ -141,6 +141,9 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         return false;
 
     if (word[n - 1] == 's' && word[n - 2] == '\'') {
+        string wordBefore = word.substr(0, n - 2);
+        if (!testBloom(wordBefore, bloom))
+            return false;
         if (containAp == 1)
             return true;
         return false;

@@ -20,6 +20,9 @@ const size_t bigramCount = sizeof(bigramFrequency) / sizeof(bigramFrequency[0]);
 const size_t strongBigramUsed = 40;
 const size_t bigramUsed = 80;
 
+const set<string> disallowedBegins = {
+"bq", "fk", "gx", "hx", "jq", "jx", "jz", "kx", "kz", "lk", "lq", "mq", "qg", "qj", "qx", "qz", "rz", "uo", "uq", "vk", "vq", "vz", "wq", "wx", "wz", "xg", "xj", "xk", "xz", "yj", "yk", "yx", "yz", "zc", "zf", "zj", "zq", "zv", "zx" };
+
 uint64_t hashString(const string& word, size_t index) {
     const uint64_t constants[] = {27644437, 115249, 33391, 108301, 115249};
     const size_t constantsCount = sizeof(constants) / sizeof(constants[0]);
@@ -47,7 +50,7 @@ bool testBloom(const string& word, const vector<bool>& bloom) {
 }
 
 bool testVowel(char i) {
-    if (i == 'a' || i == 'e' || i == 'i' || i == 'o' || i == 'u' || i == 'y')
+    if (i == 'a' || i == 'e' || i == 'i' || i == 'o' || i == 'u')
         return true;
     return false;
 }
@@ -146,12 +149,22 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     size_t n = word.size();
     string wordForBloom = word;
     bool isSword = false;
+
+    if (n > 1) {
+        string prefix = word.substr(0, 2);
+        if (disallowedBegins.find(prefix) != disallowedBegins.end())
+            return false;
+    }
     if (n > 2 && word[n - 1] == 's' && word[n-2] == '\'') {
         wordForBloom = word.substr(0, n - 2);
         isSword = true;
     }
     if (!testBloom(wordForBloom, bloom))
         return false;
+
+    if (word != wordForBloom)
+        if (!testWord(wordForBloom, bloom))
+            return false;
 
     size_t m = isSword
         ? n - 2
@@ -203,14 +216,6 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     if (sqrt(bigramPoints) < bigramPointCoeff[m] * bigramCount * (m - 1)) {
         return false;
     }
-    /*
-    if (m > 2 && m < 10 && sqrt(bigramPoints) < .24 * bigramCount * (m - 1)) {
-        return false;
-    }
-    if (m > 9 && sqrt(bigramPoints) < .23 * bigramCount * (m - 1)) {
-        return false;
-    }
-*/
     if (containAp && !isSword)
         return false;
     if (n < 3 && containAp)
@@ -245,18 +250,18 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         return false;
     if (n > 7 && vowelCount < n / 5)
         ++strangeCount;
-    if (n > 7 && consolantCount < n / 4)
-        ++strangeCount;
-    if (strangeCount > 1)
+//    if (n > 7 && consolantCount < n / 4)
+ //       ++strangeCount;
+    if (strangeCount > 0)
         return false;
 
-    if (word[0] >= 'z')
-        ++strangeCount;
+//    if (word[0] >= 'z')
+ //       ++strangeCount;
 
-    if (countPair(word) > 3)
-        ++strangeCount;
-    if (strangeCount > 1)
-        return false;
+  //  if (countPair(word) > 3)
+   //     ++strangeCount;
+ //   if (strangeCount > 1)
+  //      return false;
 
 //    if (containAp)
 //        return false;
@@ -356,4 +361,17 @@ int main(int argc, char *argv[]) {
     cout << "Trash: " << precisionTrash << " " << countTrashOk << " : " << countTrashFail << endl;
     cout << "Words: " << precisionWords << " " << countWordsOk << " : " << countWordsFail << endl;
     cout << "Precision: " << precision << endl;
+    return 0;
+
+    const set<string> allowed = {
+"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz", "ca", "cb", "cc", "cd", "ce", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "cn", "co", "cp", "cq", "cr", "cs", "ct", "cu", "cv", "cw", "cx", "cy", "cz", "da", "db", "dc", "dd", "de", "df", "dg", "dh", "di", "dj", "dk", "dl", "dm", "dn", "do", "dp", "dq", "dr", "ds", "dt", "du", "dv", "dw", "dx", "dy", "dz", "ea", "eb", "ec", "ed", "ee", "ef", "eg", "eh", "ei", "ej", "ek", "el", "em", "en", "eo", "ep", "eq", "er", "es", "et", "eu", "ev", "ew", "ex", "ey", "ez", "fa", "fb", "fc", "fd", "fe", "ff", "fg", "fh", "fi", "fj", "fl", "fm", "fn", "fo", "fp", "fq", "fr", "fs", "ft", "fu", "fv", "fw", "fx", "fy", "fz", "ga", "gb", "gc", "gd", "ge", "gf", "gg", "gh", "gi", "gj", "gk", "gl", "gm", "gn", "go", "gp", "gq", "gr", "gs", "gt", "gu", "gv", "gw", "gy", "gz", "ha", "hb", "hc", "hd", "he", "hf", "hg", "hh", "hi", "hj", "hk", "hl", "hm", "hn", "ho", "hp", "hq", "hr", "hs", "ht", "hu", "hv", "hw", "hy", "hz", "ia", "ib", "ic", "id", "ie", "if", "ig", "ih", "ii", "ij", "ik", "il", "im", "in", "io", "ip", "iq", "ir", "is", "it", "iu", "iv", "iw", "ix", "iy", "iz", "ja", "jb", "jc", "jd", "je", "jf", "jg", "jh", "ji", "jj", "jk", "jl", "jm", "jn", "jo", "jp", "jr", "js", "jt", "ju", "jv", "jw", "jy", "ka", "kb", "kc", "kd", "ke", "kf", "kg", "kh", "ki", "kj", "kk", "kl", "km", "kn", "ko", "kp", "kq", "kr", "ks", "kt", "ku", "kv", "kw", "ky", "la", "lb", "lc", "ld", "le", "lf", "lg", "lh", "li", "lj", "ll", "lm", "ln", "lo", "lp", "lr", "ls", "lt", "lu", "lv", "lw", "lx", "ly", "lz", "ma", "mb", "mc", "md", "me", "mf", "mg", "mh", "mi", "mj", "mk", "ml", "mm", "mn", "mo", "mp", "mr", "ms", "mt", "mu", "mv", "mw", "mx", "my", "mz", "na", "nb", "nc", "nd", "ne", "nf", "ng", "nh", "ni", "nj", "nk", "nl", "nm", "nn", "no", "np", "nq", "nr", "ns", "nt", "nu", "nv", "nw", "nx", "ny", "nz", "oa", "ob", "oc", "od", "oe", "of", "og", "oh", "oi", "oj", "ok", "ol", "om", "on", "oo", "op", "oq", "or", "os", "ot", "ou", "ov", "ow", "ox", "oy", "oz", "pa", "pb", "pc", "pd", "pe", "pf", "pg", "ph", "pi", "pj", "pk", "pl", "pm", "pn", "po", "pp", "pq", "pr", "ps", "pt", "pu", "pv", "pw", "px", "py", "pz", "qa", "qb", "qc", "qd", "qe", "qf", "qh", "qi", "qk", "ql", "qm", "qn", "qo", "qp", "qq", "qr", "qs", "qt", "qu", "qv", "qw", "qy", "ra", "rb", "rc", "rd", "re", "rf", "rg", "rh", "ri", "rj", "rk", "rl", "rm", "rn", "ro", "rp", "rq", "rr", "rs", "rt", "ru", "rv", "rw", "rx", "ry", "sa", "sb", "sc", "sd", "se", "sf", "sg", "sh", "si", "sj", "sk", "sl", "sm", "sn", "so", "sp", "sq", "sr", "ss", "st", "su", "sv", "sw", "sx", "sy", "sz", "ta", "tb", "tc", "td", "te", "tf", "tg", "th", "ti", "tj", "tk", "tl", "tm", "tn", "to", "tp", "tq", "tr", "ts", "tt", "tu", "tv", "tw", "tx", "ty", "tz", "ua", "ub", "uc", "ud", "ue", "uf", "ug", "uh", "ui", "uj", "uk", "ul", "um", "un", "up", "ur", "us", "ut", "uu", "uv", "uw", "ux", "uy", "uz", "va", "vb", "vc", "vd", "ve", "vf", "vg", "vh", "vi", "vj", "vl", "vm", "vn", "vo", "vp", "vr", "vs", "vt", "vu", "vv", "vw", "vx", "vy", "wa", "wb", "wc", "wd", "we", "wf", "wg", "wh", "wi", "wj", "wk", "wl", "wm", "wn", "wo", "wp", "wr", "ws", "wt", "wu", "wv", "ww", "wy", "xa", "xb", "xc", "xd", "xe", "xf", "xh", "xi", "xl", "xm", "xn", "xo", "xp", "xq", "xr", "xs", "xt", "xu", "xv", "xw", "xx", "xy", "ya", "yb", "yc", "yd", "ye", "yf", "yg", "yh", "yi", "yl", "ym", "yn", "yo", "yp", "yq", "yr", "ys", "yt", "yu", "yv", "yw", "yy", "za", "zb", "zd", "ze", "zg", "zh", "zi", "zk", "zl", "zm", "zn", "zo", "zp", "zr", "zs", "zt", "zu", "zw", "zy", "zz"};
+    for (size_t c1 = 'a'; c1 <= 'z'; ++c1) {
+        for (size_t c2 = 'a'; c2 <= 'z'; ++c2) {
+            string s;
+            s += c1;
+            s += c2;
+            if (allowed.find(s) == allowed.end())
+                cout << s << endl;
+        }
+    }
 }

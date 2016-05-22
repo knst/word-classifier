@@ -16,7 +16,6 @@ using namespace std;
 const size_t bloomSize = 460000;
 const size_t bloomK = 1;
 
-map<char, double> letterProbability;
 vector<double> bigramProbability;
 
 size_t bigramIndex(const string& bigram) {
@@ -140,8 +139,6 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     size_t m = isSword
         ? n - 2
         : n;
-    if (m <= 6)
-        return true;
     size_t containAp = countAp(word);
     size_t strangeCount = 0;
     if (containAp && !isSword)
@@ -172,9 +169,6 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         ++strangeCount;
     if (strangeCount > 1)
         return false;
-
-   // if (word[0] >= 'z')
-    //    ++strangeCount;
 
     if (countPair(word) > 2)
         return false;
@@ -269,41 +263,7 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         return false;
     }
 
-    double letterProbSum = 0.0;
-    double letterProb = 1.0;
-    for (auto i : word) {
-        double probability = letterProbability[i];
-        letterProbSum += probability;
-        letterProb *= probability;
-    }
-    letterProb = log(letterProb);
-    double letterSum[] = {
-        0,
-        0,
-        0,
-        0, // 3
-        0.05,
-        0.1, // 5
-        0.15,
-        0.20,
-        0.25,
-        0.30,
-        0.35, // 10
-        0.40,
-        0.45,
-        0.50,
-        0.55,
-        0.60,
-        0.65,
-        0.70,
-        0.75,
-        0.80,
-        0.85, // 20
-    };
-    if (letterProbSum < letterSum[m]) {
-//        return false;
-    }
-/*
+    /*
     vector<double> changedBigramProb;
     for (size_t i = 0; i < m; ++i) {
         string wordC = word;
@@ -327,10 +287,6 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     }
     cout << "proprtion: " << isWord << ' ' << static_cast<double>(index) / changedBigramProb.size() << ' ' << n << '\n';
     */
-//    if (changedSumBigramProb / changedCount < bigramProb * 0.9) {
-//        return false;
-//    }
-
     return true;
 }
 
@@ -345,11 +301,6 @@ void initBigram(map<string, size_t>& biMap) {
     }
 }
 
-void addLetter(const string& word, map<char, size_t>& letterMap) {
-    for (auto i : word)
-        ++letterMap[i];
-}
-
 void addBigram(const string& word, map<string, size_t>& biMap) {
     size_t n = word.size();
     for (size_t i = 1; i < n; ++i) {
@@ -358,17 +309,6 @@ void addBigram(const string& word, map<string, size_t>& biMap) {
         bi += word[i];
         ++biMap[bi];
     }
-}
-
-map<char, double> countPropabilityLetter(map<char, size_t> letterCount) {
-    size_t summary = 0;
-    for (auto i : letterCount)
-        summary += i.second;
-    map<char, double> result;
-    for (auto i : letterCount) {
-        result[i.first] = 1.0 * i.second / summary;
-    }
-    return result;
 }
 
 vector<double> countPropabilityBigram(map<string, size_t> bigramCount) {
@@ -408,22 +348,6 @@ void printBiStat(const string& word, bool isWord) {
     cout << "sqrt: " << isWord << " " << bigramSqrt << ' ' << n << '\n';
 }
 
-void printLetterStat(const string& word, bool isWord) {
-    size_t n = word.size();
-    if (n > 25)
-        return ;
-    double letterProbSum = 0.0;
-    double letterProb = 1.0;
-    for (auto i : word) {
-        double probability = letterProbability[i];
-        letterProbSum += probability;
-        letterProb *= probability;
-    }
-    letterProb = log(letterProb);
-    cout << "sum-l: " << isWord << " " << letterProbSum << ' ' << n << '\n';
-    cout << "prob-l: " << isWord << " " << letterProb << ' ' << n << '\n';
-}
-
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         cerr << "usage: " << argv[0] << " DIR" << endl;
@@ -448,12 +372,10 @@ int main(int argc, char *argv[]) {
     initBigram(trashBi);
 
     while (dictionaryFile >> lex) {
-        addLetter(lex, letter);
         addBigram(lex, wordsBi);
         dictionary.insert(lex);
     }
 
-    letterProbability = countPropabilityLetter(letter);
     bigramProbability = countPropabilityBigram(wordsBi);
 
     vector<bool> bloom(bloomSize);
@@ -469,7 +391,6 @@ int main(int argc, char *argv[]) {
 
     while (trash >> lex) {
 //        printBiStat(lex, false);
-//        printLetterStat(lex, false);
         if (testWord(lex, bloom, false)) {
             ++countTrashFail;
             if (rand() < 200000)
@@ -481,7 +402,6 @@ int main(int argc, char *argv[]) {
     cerr << "----" << endl;
     while (words >> lex) {
 //        printBiStat(lex, true);
- //       printLetterStat(lex, true);
         if (testWord(lex, bloom, true)) {
             ++countWordsOk;
         } else {

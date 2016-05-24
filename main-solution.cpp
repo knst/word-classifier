@@ -9,7 +9,6 @@
 using namespace std;
 
 const size_t bloomSize = 459983;
-const size_t bloomK = 1;
 const size_t bloomPrefixSize = 7;
 const size_t bigramCount = 26 * 26;
 
@@ -19,12 +18,12 @@ size_t bigramIndex(const string& bigram) {
     return (bigram[0] - 'a') * 26 + bigram[1] - 'a';
 }
 
-uint64_t hashString(const string& word, size_t index) {
+uint64_t hashString(const string& word) {
     const uint64_t constants[] = {27644437, 115249, 33391, 108301, 115249};
 
     uint64_t result = 0;
     for (auto i : word) {
-        result = (result + i) * constants[index] + constants[index + 1];
+        result = (result + i) * constants[0] + constants[1];
     }
     return result % bloomSize;
 }
@@ -33,10 +32,8 @@ bool testBloom(const string& word, const vector<bool>& bloom) {
     string prefix = word;
     if (prefix.size() > bloomPrefixSize)
         prefix = prefix.substr(0, bloomPrefixSize);
-    for (size_t k = 0; k < bloomK; ++k) {
-        if (!bloom[hashString(prefix, k)])
-            return false;
-    }
+    if (!bloom[hashString(prefix)])
+        return false;
     return true;
 }
 
@@ -95,6 +92,15 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         wordForBloom = word.substr(0, n - 2);
         isSword = true;
     }
+    size_t m = isSword
+        ? n - 2
+        : n;
+    size_t containAp = countAp(word);
+
+    if (n < 3 && containAp)
+        return false;
+    if (n == 2 && bigramProbability[bigramIndex(word)] < 3.0e-6)
+        return false;
     if (n < 3)
         return true;
     if (n < 4 && isSword)
@@ -102,10 +108,6 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     if (n > 2 && !testBloom(wordForBloom, bloom))
         return false;
 
-    size_t m = isSword
-        ? n - 2
-        : n;
-    size_t containAp = countAp(word);
     if (containAp && !isSword)
         return false;
     if (containAp > 1)
@@ -150,6 +152,8 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         -81,
         -84,
         -87, // 15,
+        -89,
+        -91,
     };
     if (bigramProb < bigramProbMax[n - 3]) {
         return false;
@@ -164,11 +168,6 @@ bool testWord(const string& word, const vector<bool>& bloom) {
         0.043,
         0.045,
         0.050,
-        0.060,
-        0.070,
-        0.080,
-        0.090, // 20
-        0.100,
     };
     if (m >= 8) {
         if (bigramProbSum *.69 < bigramSumMin[m - 8]) {
@@ -177,33 +176,22 @@ bool testWord(const string& word, const vector<bool>& bloom) {
     }
 
     float bigramSumSqrt[] = {
-        0,
-        0,
-        0,
-        0,
-        0,
-        0, // 5
-        0.04,
-        0.07,
-        0.1,
-        0.2,
-        0.3, // 10
-        0.4,
-        0.6,
-        0.8,
-        0.9,
-        1.1, // 15
-        1.2,
-        1.6,
+        0.29, // 9
+        0.36, // 10
+        0.42,
+        0.57,
+        0.7,
+        0.86,
+        1.05, // 15
     };
 
-    if (bigramSqrt *1.05 < bigramSumSqrt[m]) {
+    if (m > 8 && bigramSqrt < bigramSumSqrt[m - 9]) {
         return false;
     }
     return true;
 }
 
-vector<float> countPropabilityBigram() {
+vector<float> countProbabilityBigram() {
     vector<float> result(bigramCount);
     ifstream probabilitiesFile("bigrams.bin", ios::binary);
     size_t summary = 40000;
@@ -221,7 +209,7 @@ vector<float> countPropabilityBigram() {
 }
 
 int main(int argc, char *argv[]) {
-    bigramProbability = countPropabilityBigram();
+    bigramProbability = countProbabilityBigram();
 
     vector<bool> bloom(bloomSize + 7);
     vector<uint8_t> values;

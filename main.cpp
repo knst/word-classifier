@@ -14,7 +14,6 @@
 using namespace std;
 
 const size_t bloomSize = 459983;
-const size_t bloomK = 1;
 const size_t bloomPrefixSize = 7;
 
 vector<float> bigramProbability;
@@ -23,15 +22,12 @@ size_t bigramIndex(const string& bigram) {
     return (bigram[0] - 'a') * 26 + bigram[1] - 'a';
 }
 
-uint64_t hashString(const string& word, size_t index) {
+uint64_t hashString(const string& word) {
     const uint64_t constants[] = {27644437, 115249, 33391, 108301, 115249};
-    const size_t constantsCount = sizeof(constants) / sizeof(constants[0]);
-    if (index + 1 > constantsCount)
-        throw std::invalid_argument("overflow in hashString: index too long");
 
     uint64_t result = 0;
     for (auto i : word) {
-        result = (result + i) * constants[index] + constants[index + 1];
+        result = (result + i) * constants[0] + constants[1];
     }
     return result % bloomSize;
 }
@@ -40,18 +36,14 @@ void setBloom(const string& word, vector<bool>& bloom) {
     string prefix = word;
     if (prefix.size() > bloomPrefixSize)
         prefix = prefix.substr(0, bloomPrefixSize);
-    for (size_t k = 0; k < bloomK; ++k) {
-        bloom[hashString(prefix, k)] = true;
-    }
+    bloom[hashString(prefix)] = true;
 }
 bool testBloom(const string& word, const vector<bool>& bloom) {
     string prefix = word;
     if (prefix.size() > bloomPrefixSize)
         prefix = prefix.substr(0, bloomPrefixSize);
-    for (size_t k = 0; k < bloomK; ++k) {
-        if (!bloom[hashString(prefix, k)])
-            return false;
-    }
+    if (!bloom[hashString(prefix)])
+        return false;
     return true;
 }
 
@@ -101,16 +93,6 @@ bool testTripple(const string& word) {
     return false;
 }
 
-size_t countPair(const string& word) {
-    size_t n = word.size();
-    size_t count = 0;
-    for (size_t i = 1; i < n; ++i) {
-        if (word[i] == word[i - 1])
-            ++count;
-    }
-    return count;
-}
-
 bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     size_t n = word.size();
     string wordForBloom = word;
@@ -120,20 +102,22 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         wordForBloom = word.substr(0, n - 2);
         isSword = true;
     }
-    if (n < 3)
-        return true;
-    if (n < 4 && isSword)
-        return true;
-    if (n > 2 && !testBloom(wordForBloom, bloom))
-        return false;
-//    if (isSword && !testWord(wordForBloom, bloom, isWord))
- //       return false;
-
     size_t m = isSword
         ? n - 2
         : n;
     size_t containAp = countAp(word);
-    size_t strangeCount = 0;
+
+    if (n < 3 && containAp)
+        return false;
+    if (n == 2 && bigramProbability[bigramIndex(word)] < 3.0e-6)
+        return false;
+    if (n < 3)
+        return true;
+    if (n < 4 && isSword)
+        return true;
+    if (!testBloom(wordForBloom, bloom))
+        return false;
+
     if (containAp && !isSword)
         return false;
     if (containAp > 1)
@@ -148,28 +132,23 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         return false;
     if (vowelSeq > 5)
         return false;
-    if (strangeCount > 1)
-        return false;
-
-//    if (countPair(word) > 2)
-//        return false;
 
     float bigramProbSum = 0.0;
     float bigramProb = 1.0;
     float bigramSqrt = 0.0;
     for (size_t i = 1; i < m; ++i) {
         float probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
-        if (probability < 0.0000030)
+        if (probability < 3.0e-6)
             return false;
         bigramProbSum += probability;
         bigramProb *= probability;
         bigramSqrt += sqrt(probability);
     }
     bigramProb = log(bigramProb);
+    if (n > 15) {
+        return false;
+    }
     float bigramProbMax[] = {
-        0,
-        0,
-        0,
         -21,
         -25,
         -32, // 5
@@ -183,64 +162,45 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         -81,
         -84,
         -87, // 15
+        -89,
+        -91,
     };
-    if (m >= 3 && bigramProb < bigramProbMax[m]) {
+    if (bigramProb < bigramProbMax[n - 3]) {
         return false;
     }
     float bigramSumMin[] = {
-        0.008, // 10
+        0.005,
+        0.008,
         0.012, // 10
         0.015,
         0.024,
         0.035,
         0.043,
-        0.045,
+        0.045, // 15
         0.050,
-        0.060,
-        0.070,
-        0.080,
-        0.090, // 20
-        0.100,
     };
-    if (m >= 9) {
-        if (bigramProbSum *.69< bigramSumMin[m - 9]) {
-            return false;
-        }
-    }
-    if (m >= 15) {
-        if (bigramProbSum > 0.17) {
+    if (m >= 8) {
+        if (bigramProbSum *.69 < bigramSumMin[m - 8]) {
             return false;
         }
     }
 
     float bigramSumSqrt[] = {
-        0,
-        0,
-        0,
-        0,
-        0,
-        0, // 5
-        0.04,
-        0.07,
-        0.1,
-        0.2,
-        0.3, // 10
-        0.4,
-        0.6,
-        0.8,
-        0.9,
-        1.1, // 15
-        1.2,
-        1.6,
-        1.8,
-        2.0, // 19
-        2.2,
+        0.29, // 9
+        0.36, // 10
+        0.42,
+        0.57,
+        0.7,
+        0.86,
+        1.05, // 15
+//        1.19,
+//        1.52,
     };
 
-    if (bigramSqrt *1.05 < bigramSumSqrt[m]) {
-//    if (bigramSqrt *.75 < bigramSumSqrt[m]) {
+    if (m > 8 && bigramSqrt < bigramSumSqrt[m - 9]) {
         return false;
     }
+
 /*
     vector<float> changedBigramProb;
     for (size_t i = 0; i < 2; ++i) {
@@ -280,7 +240,17 @@ void addBigram(const string& word, map<string, size_t>& biMap) {
     }
 }
 
-vector<float> countPropabilityBigram(map<string, size_t> bigramCount) {
+void addTrigram(const string& word, map<string, size_t>& triMap) {
+    size_t n = word.size();
+    for (size_t i = 2; i < n; ++i) {
+        string bi;
+        bi += word[i - 2];
+        bi += word[i];
+        ++triMap[bi];
+    }
+}
+
+vector<float> countProbabilityBigram(map<string, size_t> bigramCount) {
     size_t summary = 0;
     for (auto& i : bigramCount) {
         if (i.second > 65535) {
@@ -352,13 +322,15 @@ int main(int argc, char *argv[]) {
     set<string> dictionary;
 
     map<string, size_t> wordsBi;
+    map<string, size_t> wordsTri;
 
     while (dictionaryFile >> lex) {
         dictionary.insert(lex);
         addBigram(lex, wordsBi);
+        addTrigram(lex, wordsTri);
     }
 
-    bigramProbability = countPropabilityBigram(wordsBi);
+    bigramProbability = countProbabilityBigram(wordsBi);
 
     vector<bool> filledBloom(bloomSize, true);
     vector<bool> bloom(bloomSize);

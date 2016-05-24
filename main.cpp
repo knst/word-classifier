@@ -13,10 +13,11 @@
 
 using namespace std;
 
-const size_t bloomSize = 460000;
+const size_t bloomSize = 459983;
 const size_t bloomK = 1;
+const size_t bloomPrefixSize = 7;
 
-vector<double> bigramProbability;
+vector<float> bigramProbability;
 
 size_t bigramIndex(const string& bigram) {
     return (bigram[0] - 'a') * 26 + bigram[1] - 'a';
@@ -37,16 +38,16 @@ uint64_t hashString(const string& word, size_t index) {
 
 void setBloom(const string& word, vector<bool>& bloom) {
     string prefix = word;
-    if (prefix.size() > 7)
-        prefix = prefix.substr(0, 7);
+    if (prefix.size() > bloomPrefixSize)
+        prefix = prefix.substr(0, bloomPrefixSize);
     for (size_t k = 0; k < bloomK; ++k) {
         bloom[hashString(prefix, k)] = true;
     }
 }
 bool testBloom(const string& word, const vector<bool>& bloom) {
     string prefix = word;
-    if (prefix.size() > 7)
-        prefix = prefix.substr(0, 7);
+    if (prefix.size() > bloomPrefixSize)
+        prefix = prefix.substr(0, bloomPrefixSize);
     for (size_t k = 0; k < bloomK; ++k) {
         if (!bloom[hashString(prefix, k)])
             return false;
@@ -60,14 +61,6 @@ bool testVowel(char i) {
     return false;
 }
 
-size_t countConsolant(const string& word) {
-    size_t count = 0;
-    for (auto i : word) {
-        if (testVowel(i))
-            ++count;
-    }
-    return count;
-}
 size_t countConsolantSeq(const string& word) {
     size_t bestCount = 0;
     size_t n = word.size();
@@ -133,8 +126,8 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         return true;
     if (n > 2 && !testBloom(wordForBloom, bloom))
         return false;
-    if (isSword && !testWord(wordForBloom, bloom, isWord))
-        return false;
+//    if (isSword && !testWord(wordForBloom, bloom, isWord))
+ //       return false;
 
     size_t m = isSword
         ? n - 2
@@ -146,40 +139,26 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     if (containAp > 1)
         return false;
 
-    if (testTripple(word) && n != 3)
+    if (testTripple(word) && n > 3)
         return false;
-
-
-    if (n > 25) {
-        // too many correct words is lost, but trash filtered better (at this moment).
-        return false;
-    }
 
     size_t consolantSeq = countConsolantSeq(word);
     size_t vowelSeq = countVowelSeq(word);
-    size_t consolantCount = countConsolant(word);
-    size_t vowelCount = n - consolantCount;
-    if (consolantSeq > 4)
+    if (consolantSeq > 5)
         return false;
-    if (vowelSeq > 6)
+    if (vowelSeq > 5)
         return false;
-    if (n > 7 && vowelCount < n / 6)
-        ++strangeCount;
-    if (n > 7 && consolantCount < n / 5)
-        ++strangeCount;
     if (strangeCount > 1)
         return false;
 
-    if (countPair(word) > 2)
-        return false;
-
-//    if (containAp)
+//    if (countPair(word) > 2)
 //        return false;
-    double bigramProbSum = 0.0;
-    double bigramProb = 1.0;
-    double bigramSqrt = 0.0;
+
+    float bigramProbSum = 0.0;
+    float bigramProb = 1.0;
+    float bigramSqrt = 0.0;
     for (size_t i = 1; i < m; ++i) {
-        double probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
+        float probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
         if (probability < 0.0000030)
             return false;
         bigramProbSum += probability;
@@ -187,13 +166,13 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         bigramSqrt += sqrt(probability);
     }
     bigramProb = log(bigramProb);
-    double bigramProbMax[] = {
+    float bigramProbMax[] = {
         0,
         0,
         0,
-        0,
-        -20,
-        -30, // 5
+        -21,
+        -25,
+        -32, // 5
         -37,
         -45,
         -51,
@@ -205,16 +184,16 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         -84,
         -87, // 15
     };
-    if (m >= 7 && bigramProb < bigramProbMax[m]) {
+    if (m >= 3 && bigramProb < bigramProbMax[m]) {
         return false;
     }
-    double bigramSumMin[] = {
-        0.006, // 10
+    float bigramSumMin[] = {
+        0.008, // 10
         0.012, // 10
         0.015,
-        0.020,
-        0.030,
+        0.024,
         0.035,
+        0.043,
         0.045,
         0.050,
         0.060,
@@ -224,7 +203,7 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         0.100,
     };
     if (m >= 9) {
-        if (bigramProbSum *.75< bigramSumMin[m - 9]) {
+        if (bigramProbSum *.69< bigramSumMin[m - 9]) {
             return false;
         }
     }
@@ -234,7 +213,7 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         }
     }
 
-    double bigramSumSqrt[] = {
+    float bigramSumSqrt[] = {
         0,
         0,
         0,
@@ -262,17 +241,16 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
 //    if (bigramSqrt *.75 < bigramSumSqrt[m]) {
         return false;
     }
-
-    /*
-    vector<double> changedBigramProb;
-    for (size_t i = 0; i < m; ++i) {
+/*
+    vector<float> changedBigramProb;
+    for (size_t i = 0; i < 2; ++i) {
         string wordC = word;
         for (size_t c = 'a'; c <= 'z'; ++c) {
             wordC[i] = c;
 
-            double bigramProb = 0.0;
+            float bigramProb = 0.0;
             for (size_t i = 1; i < m; ++i) {
-                double probability = bigramProbability[bigramIndex(wordC.substr(i - 1, 2))];
+                float probability = bigramProbability[bigramIndex(wordC.substr(i - 1, 2))];
                 bigramProb += probability;
             }
 //            bigramProb = log(bigramProb);
@@ -285,20 +263,11 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         if (changedBigramProb[i] < bigramProbSum)
             ++index;
     }
-    cout << "proprtion: " << isWord << ' ' << static_cast<double>(index) / changedBigramProb.size() << ' ' << n << '\n';
-    */
+//    if (static_cast<float>(index) / changedBigramProb.size() > 0.96)
+//    if (static_cast<float>(index) / changedBigramProb.size() < 0.30)
+//        return false;
+*/
     return true;
-}
-
-void initBigram(map<string, size_t>& biMap) {
-    for (char c = 'a'; c <= 'z'; ++c) {
-        for (char c2 = 'a'; c2 <= 'z'; ++c2) {
-            string bi;
-            bi += c;
-            bi += c2;
-            biMap[bi] = 0;
-        }
-    }
 }
 
 void addBigram(const string& word, map<string, size_t>& biMap) {
@@ -311,11 +280,28 @@ void addBigram(const string& word, map<string, size_t>& biMap) {
     }
 }
 
-vector<double> countPropabilityBigram(map<string, size_t> bigramCount) {
+vector<float> countPropabilityBigram(map<string, size_t> bigramCount) {
     size_t summary = 0;
-    for (auto i : bigramCount)
+    for (auto& i : bigramCount) {
+        if (i.second > 65535) {
+            cerr << i.second << endl;
+            i.second = 65535;
+        }
         summary += i.second;
-    vector<double> result(26 * 26);
+    }
+    summary += 40000;
+    ofstream probabilitiesFile("bigrams.bin", ios::binary);
+    for (char c1 = 'a'; c1 <= 'z'; ++c1) {
+        for (char c2 = 'a'; c2 <= 'z'; ++c2) {
+            string bi;
+            bi += c1;
+            bi += c2;
+            uint16_t count = static_cast<uint16_t>(bigramCount[bi]);
+            probabilitiesFile.write(reinterpret_cast<char*>(&count), 2);
+        }
+    }
+
+    vector<float> result(26 * 26);
     for (auto i : bigramCount) {
         result[bigramIndex(i.first)] = 1.0 * i.second / summary;
     }
@@ -323,17 +309,17 @@ vector<double> countPropabilityBigram(map<string, size_t> bigramCount) {
 }
 
 void printBiStat(const string& word, bool isWord) {
-    double bigramProbSum = 0.0;
-    double bigramProb = 1.0;
-    double bigramSquare = 0.0;
-    double bigramSqrt = 0.0;
+    float bigramProbSum = 0.0;
+    float bigramProb = 1.0;
+    float bigramSquare = 0.0;
+    float bigramSqrt = 0.0;
     size_t n = word.size();
     if (n < 3)
         return ;
     if (n > 25)
         return ;
     for (size_t i = 1; i < n; ++i) {
-        double probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
+        float probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
         bigramProbSum += probability;
         bigramProb *= probability;
         bigramSquare += probability * probability;
@@ -366,14 +352,10 @@ int main(int argc, char *argv[]) {
     set<string> dictionary;
 
     map<string, size_t> wordsBi;
-    map<string, size_t> trashBi;
-    map<char, size_t> letter;
-    initBigram(wordsBi);
-    initBigram(trashBi);
 
     while (dictionaryFile >> lex) {
-        addBigram(lex, wordsBi);
         dictionary.insert(lex);
+        addBigram(lex, wordsBi);
     }
 
     bigramProbability = countPropabilityBigram(wordsBi);
@@ -391,7 +373,19 @@ int main(int argc, char *argv[]) {
         }
     }
     cerr << ok << ' ' << fail << endl;
-
+    vector<uint8_t> values;
+    for (size_t i = 0; i < bloomSize; i += 8) {
+        uint8_t value = 0;
+        for (size_t j = 0; j < 8; ++j) {
+            value = value << 1;
+            if (i + j < bloomSize)
+                value = value | bloom[i + j];
+        }
+        values.push_back(value);
+    }
+    ofstream bloomFilter("bloom.bin");
+    for (auto i : values)
+        bloomFilter << i;
     string dir = argv[1];
     string trashFile = dir + "/trash.list";
     string wordsFile = dir + "/words.list";
@@ -420,9 +414,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    double precisionTrash = 1.0 * countTrashOk / (countTrashOk + countTrashFail);
-    double precisionWords = 1.0 * countWordsOk / (countWordsOk + countWordsFail);
-    double precision = 1.0 * (countTrashOk + countWordsOk) / (countTrashOk + countTrashFail + countWordsFail + countWordsOk);
+    float precisionTrash = 100.0 * countTrashOk / (countTrashOk + countTrashFail);
+    float precisionWords = 100.0 * countWordsOk / (countWordsOk + countWordsFail);
+    float precision = 100.0 * (countTrashOk + countWordsOk) / (countTrashOk + countTrashFail + countWordsFail + countWordsOk);
     cout << "Trash: " << precisionTrash << " " << countTrashOk << " : " << countTrashFail << endl;
     cout << "Words: " << precisionWords << " " << countWordsOk << " : " << countWordsFail << endl;
     cout << "Precision: " << precision << endl;

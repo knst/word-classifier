@@ -378,10 +378,19 @@ int main(int argc, char *argv[]) {
 
     bigramProbability = countPropabilityBigram(wordsBi);
 
+    vector<bool> filledBloom(bloomSize, true);
     vector<bool> bloom(bloomSize);
+    size_t ok = 0;
+    size_t fail = 0;
     for (auto i : dictionary) {
-        setBloom(i, bloom);
+        if (testWord(i, filledBloom, true)) {
+            ++ok;
+            setBloom(i, bloom);
+        } else {
+            ++fail;
+        }
     }
+    cerr << ok << ' ' << fail << endl;
 
     string dir = argv[1];
     string trashFile = dir + "/trash.list";

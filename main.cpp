@@ -388,7 +388,11 @@ int main(int argc, char *argv[]) {
     }
     for (auto i : trashMisCount) {
         if (i.second > 2) {
-            unsetBloom(i.first, bloom);
+            string word = i.first;
+            size_t n = word.size();
+            if (word.size() > 2 && word.substr(n - 2, 2) == "'s")
+                word = word.substr(0, n - 2);
+            unsetBloom(word, bloom);
         }
     }
     vector<uint8_t> values;
@@ -408,7 +412,7 @@ int main(int argc, char *argv[]) {
 //        printBiStat(lex, false);
         if (testWord(lex, bloom, false)) {
             ++countTrashFail;
-            if (rand() < 200000)
+//            if (rand() < 200000)
                 cerr << lex << endl;
         } else {
             ++countTrashOk;

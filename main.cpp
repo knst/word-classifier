@@ -28,9 +28,9 @@ uint64_t hashString(const string& word) {
 
     uint64_t result = 0;
     for (auto i : word) {
-        result = ((result + i) * constants[0] + constants[1]) % 4294967296;
+        result = ((result + i) * constants[0] + constants[1]) % bloomSize;
     }
-    return result % bloomSize;
+    return result;
 }
 
 void setBloom(const string& word, vector<bool>& bloom) {
@@ -120,17 +120,16 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         : n;
     size_t containAp = countAp(word);
 
+    if (n == 3 && isSword)
+        return true;
     if (n < 3 && containAp)
         return false;
-    if (n == 2 && bigramProbability[bigramIndex(word)] < 3.7e-6)
-        return false;
-    if (n < 3)
-        return true;
-    if (n < 4 && isSword)
+    if (n == 1)
         return true;
     if (!testBloom(wordForBloom, bloom))
         return false;
-
+    if (n < 3)
+        return true;
     if (containAp && !isSword)
         return false;
     if (containAp > 1)

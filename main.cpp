@@ -138,6 +138,12 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     if (testTripple(word) && n > 3)
         return false;
 
+    set<string> blacks = {"dg", "dw", "tk", "tw", "xh", "wh", "cl", "nr", "dn", "tn", "br", "pr", "gl", "cr", "tr"};
+    if (blacks.find(word.substr(m - 2, 2)) != blacks.end())
+        return false;
+    if (word[n-1] == 'q')
+        return false;
+
     size_t consolantSeq = countConsolantSeq(word);
     size_t vowelSeq = countVowelSeq(word);
     if (consolantSeq > 5)
@@ -148,12 +154,10 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     float bigramProbSum = 0.0;
     float bigramProb = 1.0;
     float bigramSqrt = 0.0;
-    vector<float> bigramProbs;
+    if (bigramProbability[bigramIndex(word.substr(0, 2))] < 4.9e-6)
+        return false;
     for (size_t i = 1; i < m; ++i) {
         float probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
-        if (probability < 3.0e-6)
-            return false;
-        bigramProbs.push_back(probability);
         bigramProbSum += probability;
         bigramProb *= probability;
         bigramSqrt += sqrt(probability);
@@ -162,20 +166,11 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     if (n > 17) {
         return false;
     }
-    if (m > 12) {
-        sort(bigramProbs.begin(), bigramProbs.end());
-        bigramProbs.push_back(1.0);
-        size_t index = 0;
-        while (bigramProbs[index] < 5e-4)
-            ++index;
-        if (index > m / 4)
-            return false;
-    }
     float bigramProbMax[] = {
         -21,
         -25,
-        -32, // 5
-        -37,
+        -33, // 5
+        -40,
         -45,
         -52,
         -57,
@@ -186,7 +181,7 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         -72,
         -74, // 15
         -80,
-        -65,
+        -67,
     };
     if (bigramProb < bigramProbMax[n - 3]) {
         return false;
@@ -411,7 +406,7 @@ int main(int argc, char *argv[]) {
 //        printBiStat(lex, false);
         if (testWord(lex, bloom, false)) {
             ++countTrashFail;
-//            if (rand() < 200000)
+            if (rand() < 200000)
                 cerr << lex << endl;
         } else {
             ++countTrashOk;

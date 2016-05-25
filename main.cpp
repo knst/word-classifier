@@ -14,7 +14,8 @@
 using namespace std;
 
 const size_t bloomSize = 459983;
-const size_t bloomPrefixSize = 7;
+//const size_t bloomSize = 505807;
+const size_t bloomPrefixSize = 7; // TODO: 8
 
 vector<float> bigramProbability;
 
@@ -23,11 +24,11 @@ size_t bigramIndex(const string& bigram) {
 }
 
 uint64_t hashString(const string& word) {
-    const uint64_t constants[] = {27644437, 115249, 33391, 108301, 115249};
+    const uint64_t constants[] = {/* 27644437,*/ 115249, 33391, 108301, 115249};
 
     uint64_t result = 0;
     for (auto i : word) {
-        result = (result + i) * constants[0] + constants[1];
+        result = ((result + i) * constants[0] + constants[1]) % 4294967296;
     }
     return result % bloomSize;
 }
@@ -37,6 +38,12 @@ void setBloom(const string& word, vector<bool>& bloom) {
     if (prefix.size() > bloomPrefixSize)
         prefix = prefix.substr(0, bloomPrefixSize);
     bloom[hashString(prefix)] = true;
+}
+void unsetBloom(const string& word, vector<bool>& bloom) {
+    string prefix = word;
+    if (prefix.size() > bloomPrefixSize)
+        prefix = prefix.substr(0, bloomPrefixSize);
+    bloom[hashString(prefix)] = false;
 }
 bool testBloom(const string& word, const vector<bool>& bloom) {
     string prefix = word;
@@ -93,6 +100,12 @@ bool testTripple(const string& word) {
     return false;
 }
 
+size_t countLetter(const string& word) {
+    set<char> l;
+    for (auto i : word)
+        l.insert(i);
+    return l.size();
+}
 bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     size_t n = word.size();
     string wordForBloom = word;
@@ -109,7 +122,7 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
 
     if (n < 3 && containAp)
         return false;
-    if (n == 2 && bigramProbability[bigramIndex(word)] < 3.0e-6)
+    if (n == 2 && bigramProbability[bigramIndex(word)] < 3.7e-6)
         return false;
     if (n < 3)
         return true;
@@ -136,17 +149,28 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
     float bigramProbSum = 0.0;
     float bigramProb = 1.0;
     float bigramSqrt = 0.0;
+    vector<float> bigramProbs;
     for (size_t i = 1; i < m; ++i) {
         float probability = bigramProbability[bigramIndex(word.substr(i - 1, 2))];
         if (probability < 3.0e-6)
             return false;
+        bigramProbs.push_back(probability);
         bigramProbSum += probability;
         bigramProb *= probability;
         bigramSqrt += sqrt(probability);
     }
     bigramProb = log(bigramProb);
-    if (n > 15) {
+    if (n > 17) {
         return false;
+    }
+    if (m > 12) {
+        sort(bigramProbs.begin(), bigramProbs.end());
+        bigramProbs.push_back(1.0);
+        size_t index = 0;
+        while (bigramProbs[index] < 5e-4)
+            ++index;
+        if (index > m / 4)
+            return false;
     }
     float bigramProbMax[] = {
         -21,
@@ -154,33 +178,37 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         -32, // 5
         -37,
         -45,
-        -51,
-        -62,
-        -69, // 10
-        -74,
-        -77,
-        -81,
-        -84,
-        -87, // 15
-        -89,
-        -91,
+        -52,
+        -57,
+        -63, // 10
+        -69,
+        -71,
+        -72,
+        -72,
+        -74, // 15
+        -80,
+        -65,
     };
     if (bigramProb < bigramProbMax[n - 3]) {
         return false;
     }
+    if (m > 9 && bigramProb < bigramProbMax[m - 3]) {
+        return false;
+    }
     float bigramSumMin[] = {
-        0.005,
-        0.008,
-        0.012, // 10
-        0.015,
-        0.024,
-        0.035,
-        0.043,
-        0.045, // 15
-        0.050,
+        0.6,
+        0.8,
+        1.2, // 10
+        1.5,
+        2.4,
+        3.5,
+        4.3,
+        6.0, // 15
+        8.0,
+        12.,
     };
     if (m >= 8) {
-        if (bigramProbSum *.69 < bigramSumMin[m - 8]) {
+        if (bigramProbSum * 73 < bigramSumMin[m - 8]) {
             return false;
         }
     }
@@ -193,8 +221,8 @@ bool testWord(const string& word, const vector<bool>& bloom, bool isWord) {
         0.7,
         0.86,
         1.05, // 15
-//        1.19,
-//        1.52,
+        1.22,
+        0.,
     };
 
     if (m > 8 && bigramSqrt < bigramSumSqrt[m - 9]) {
@@ -345,6 +373,24 @@ int main(int argc, char *argv[]) {
         }
     }
     cerr << ok << ' ' << fail << endl;
+    string dir = argv[1];
+    string trashFile = dir + "/trash.list";
+    string wordsFile = dir + "/words.list";
+    ifstream trash(trashFile.c_str());
+    ifstream trash2(trashFile.c_str());
+    ifstream words(wordsFile.c_str());
+
+    map<string, size_t> trashMisCount;
+    while (trash >> lex) {
+        if (testWord(lex, bloom, false)) {
+            ++trashMisCount[lex];
+        }
+    }
+    for (auto i : trashMisCount) {
+        if (i.second > 2) {
+            unsetBloom(i.first, bloom);
+        }
+    }
     vector<uint8_t> values;
     for (size_t i = 0; i < bloomSize; i += 8) {
         uint8_t value = 0;
@@ -358,13 +404,7 @@ int main(int argc, char *argv[]) {
     ofstream bloomFilter("bloom.bin");
     for (auto i : values)
         bloomFilter << i;
-    string dir = argv[1];
-    string trashFile = dir + "/trash.list";
-    string wordsFile = dir + "/words.list";
-    ifstream trash(trashFile.c_str());
-    ifstream words(wordsFile.c_str());
-
-    while (trash >> lex) {
+    while (trash2 >> lex) {
 //        printBiStat(lex, false);
         if (testWord(lex, bloom, false)) {
             ++countTrashFail;

@@ -14,7 +14,7 @@
 using namespace std;
 
 //const size_t bloomSize = 459983;
-const size_t bloomSize = 501427;
+const size_t bloomSize = 502122;
 const size_t bloomPrefixSize = 8; // TODO: 8
 
 vector<float> bigramProbability;
@@ -215,7 +215,7 @@ bool testWord(const string& word, const vector<int>& bloom, bool isWord) {
         return false;
     }
 
-    if (m > 12 && bigramProb < bigramProbMax[m - 3]) {
+    if (m > 13 && bigramProb < bigramProbMax[m - 3]) {
         return false;
     }
     float bigramSumMin[] = {
@@ -307,7 +307,6 @@ vector<float> countProbabilityBigram(map<string, size_t> bigramCount) {
     size_t summary = 0;
     for (auto& i : bigramCount) {
         if (i.second > 65535) {
-            cerr << i.second << endl;
             i.second = 65535;
         }
         summary += i.second;
@@ -442,7 +441,7 @@ int main(int argc, char *argv[]) {
 //        printBiStat(lex, false);
         if (testWord(lex, bloom, false)) {
             ++countTrashFail;
-            if (rand() < 200000)
+            if (rand() < 100000)
                 cerr << lex << endl;
         } else {
             ++countTrashOk;
@@ -456,7 +455,7 @@ int main(int argc, char *argv[]) {
             ++countWordsOk;
         } else {
             ++countWordsFail;
-            if (rand() < 800000)
+            if (rand() < 300000)
                 cerr << lex << endl;
         }
         initTested();
